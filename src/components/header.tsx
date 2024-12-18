@@ -37,10 +37,10 @@ export default function Header() {
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
       <Link href="/" className="text-2xl font-bold vibrant-gradient">
         <Image
-          src="/civic-hive.png"
+          src="/civic_hive.png"
           alt="Logo"
-          width={50}
-          height={50}
+          width={54}
+          height={57}
         />
       </Link>
         <div className="flex items-center space-x-4">

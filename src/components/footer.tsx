@@ -37,7 +37,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-8 pt-8 border-t border-blue-200 text-center text-sm">
-          <p className="vibrant-gradient inline-block">&copy; {new Date().getFullYear()} Aware. All rights reserved.</p>
+          <p className="vibrant-gradient inline-block">&copy; {new Date().getFullYear()} Civic Hive. All rights reserved.</p>
         </div>
       </div>
     </footer>
