@@ -1,6 +1,5 @@
 "use client";
-
-import React, { useRef, useState, useMemo } from "react";
+import React, { useRef, useState } from "react"; // Removed useMemo since we won't need capabilities
 import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Loader, Paperclip, ArrowUpRight } from 'lucide-react';
 import imageCompression from "browser-image-compression";
 import { useAccount } from "wagmi";
-import { useCapabilities, useWriteContracts } from 'wagmi/experimental'
+import { useWriteContract } from 'wagmi' // Changed from useWriteContracts
 import { contractABI, CONTRACT_ADDRESS } from "@/lib/contract";
 import lighthouse from "@lighthouse-web3/sdk";
 
@@ -26,28 +25,23 @@ const SubmitReport = () => {
   const [gpsProcessing, setGpsProcessing] = useState(false);
   const [submittedData, setSubmittedData] = useState<any>(null);
   const account = useAccount();
-  const { writeContracts } = useWriteContracts({
-    mutation: { onSuccess: (id) => setId(id) },
-  });
-  const { data: availableCapabilities } = useCapabilities({
-    account: account.address,
-  });
+  const { writeContract } = useWriteContract()
 
-  const capabilities = useMemo(() => {
-    if (!availableCapabilities || !account.chainId) return {};
-    const capabilitiesForChain = availableCapabilities[account.chainId];
-    if (
-      capabilitiesForChain["paymasterService"] &&
-      capabilitiesForChain["paymasterService"].supported
-    ) {
-      return {
-        paymasterService: {
-          url: `https://api.developer.coinbase.com/rpc/v1/base/LyT_0lKAx57z6hEjpTxTeq9ToxFOtlNv`,
-        },
-      };
-    }
-    return {};
-  }, [availableCapabilities, account.chainId]);
+  // const capabilities = useMemo(() => {
+  //   if (!availableCapabilities || !account.chainId) return {};
+  //   const capabilitiesForChain = availableCapabilities[account.chainId];
+  //   if (
+  //     capabilitiesForChain["paymasterService"] &&
+  //     capabilitiesForChain["paymasterService"].supported
+  //   ) {
+  //     return {
+  //       paymasterService: {
+  //         url: `https://api.developer.coinbase.com/rpc/v1/base/LyT_0lKAx57z6hEjpTxTeq9ToxFOtlNv`,
+  //       },
+  //     };
+  //   }
+  //   return {};
+  // }, [availableCapabilities, account.chainId]);
 
   const base64ToFile = (base64: string, filename: string) => {
     const arr = base64.split(',');
@@ -201,78 +195,6 @@ const SubmitReport = () => {
     }
   };
   
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-    
-  //   if (!title || !description || !fileBase64) {
-  //     toast({
-  //       title: "Error", 
-  //       description: "Please fill in all required fields"
-  //     });
-  //     return;
-  //   }
-  
-  //   setProcessing(true);
-  
-  //   const formData = new FormData();
-  //   formData.append("proof_text", `${title} - ${description}`);
-  //   formData.append("proof_image", fileBase64);
-  
-  //   try {
-  //     // Submit form data
-  //     const response = await fetch("http://localhost:8080/api/submit-content", {
-  //       method: "POST",
-  //       body: formData,
-  //     });
-  
-  //     const data = await response.json();
-  
-  //     if (response.ok) {
-  //       setSubmittedData(data);
-        
-  //       // Post tweet after successful submission
-  //       try {
-  //         const tweetResponse = await fetch("http://localhost:8080/api/tweet", {
-  //           method: "POST",
-  //           headers: {
-  //             "Content-Type": "application/json",
-  //           },
-  //           body: JSON.stringify({ text: description }),
-  //         });
-  
-  //         if (!tweetResponse.ok) {
-  //           console.error("Failed to post tweet");
-  //         }
-
-  //         toast({
-  //           title: "Success",
-  //           description: "Report tweeted successfully!",
-  //         });
-
-  //       } catch (error) {
-  //         console.error("Error posting tweet:", error);
-  //         throw new Error(data.error || "Failed to tweet");
-
-  //       }
-  
-  //       toast({
-  //         title: "Success",
-  //         description: "Report submitted successfully!",
-  //       });
-        
-  //     } else {
-  //       throw new Error(data.error || "Failed to submit report");
-  //     }
-  //   } catch (error) {
-  //     toast({
-  //       title: "Error",
-  //       description: error instanceof Error ? error.message : "An error occurred",
-  //     });
-  //   } finally {
-  //     setProcessing(false);
-  //   }
-  // };
-
 
   const handleBlockchainSubmit = async () => {
     if (!submittedData) {
@@ -285,21 +207,15 @@ const SubmitReport = () => {
   
     const { details, location, cID, category, sevScore } = submittedData;
   
-    // Submit the report to the blockchain
-    writeContracts({
-      contracts: [
-        {
-          address: CONTRACT_ADDRESS,
-          abi: contractABI as any,
-          functionName: "submitReport",
-          args: [details, location, cID, category, sevScore],
-        },
-      ],
-      capabilities,
-    });
-  
     try {
-      // Make the API call to /api/tweet
+      // Submit the report to Hedera
+      await writeContract({
+        address: CONTRACT_ADDRESS,
+        abi: contractABI,
+        functionName: "submitReport",
+        args: [details, location, cID, category, sevScore],
+      });
+
       const response = await fetch(`http://localhost:8080/api/tweet`, {
         method: "POST",
         headers: {
@@ -309,12 +225,12 @@ const SubmitReport = () => {
       });
   
       const data = await response.json();
-  
       if (response.ok) {
         toast({
           title: "Success",
           description: "Report submitted and tweeted successfully!",
         });
+        router.push("/dashboard");
       } else {
         toast({
           title: "Error",
@@ -322,16 +238,16 @@ const SubmitReport = () => {
         });
       }
     } catch (error) {
-      console.error("Error posting tweet:", error);
+      console.error("Error submitting report:", error);
       toast({
         title: "Error",
-        description: "Failed to post tweet",
+        description: "Failed to submit report to Hedera",
       });
     }
-  
-    // Navigate to the dashboard
-    router.push("/dashboard");
   };
+
+  
+
   return (
     <div className="container mx-auto px-4 py-16">
       <Card className="max-w-2xl mx-auto">

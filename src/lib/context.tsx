@@ -11,8 +11,8 @@ const queryClient = new QueryClient()
 const metadata = {
   name: 'Civic Hive',
   description: 'Community Reporting Platform',
-  url: 'https://your-domain.com',
-  icons: ['https://your-domain.com/icon.png']
+  url: 'https://civic-hive.com',
+  icons: ['https://ibb.co/gMwdHfb'],
 }
 
 const modal = createAppKit({

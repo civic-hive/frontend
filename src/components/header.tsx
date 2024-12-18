@@ -28,7 +28,7 @@ export default function Header() {
 
   useEffect(() => {
     if (isSuccess) {
-      router.push('/verify');
+      router.push('/dashboard');
     }
   }, [isSuccess, router]);
 

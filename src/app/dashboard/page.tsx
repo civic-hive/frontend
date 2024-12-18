@@ -1,7 +1,7 @@
 "use client"
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react' // Removed useMemo since we won't need capabilities
 import { useRouter } from 'next/navigation'
-import { useAccount } from 'wagmi'
+import { useAccount, useWriteContract, useReadContract } from 'wagmi'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -10,11 +10,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ThumbsUp, ThumbsDown, MessageSquare, Plus, ArrowUpRight, X, Loader } from 'lucide-react'
 import Link from 'next/link'
-import { useReadContract } from 'wagmi'
 import { CONTRACT_ADDRESS, contractABI } from '@/lib/contract'
-import { useCapabilities, useWriteContracts } from 'wagmi/experimental'
 import dayjs from 'dayjs'
 import Image from 'next/image'
+
 
 interface Report {
   id: string;
@@ -48,31 +47,8 @@ export default function Dashboard() {
   const [reports, setReports] = useState<Report[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [id, setId] = useState<string | undefined>(undefined);
+  const { writeContract } = useWriteContract()
 
-  const { writeContracts } = useWriteContracts({
-    mutation: { onSuccess: (id) => setId(id) },
-  });
-  const { data: availableCapabilities } = useCapabilities({
-    account: account.address,
-  });
-
-
-  const capabilities = useMemo(() => {
-    if (!availableCapabilities || !account.chainId) return {};
-    const capabilitiesForChain = availableCapabilities[account.chainId];
-    if (
-      capabilitiesForChain["paymasterService"] &&
-      capabilitiesForChain["paymasterService"].supported
-    ) {
-      return {
-        paymasterService: {
-          url: `https://api.developer.coinbase.com/rpc/v1/base/LyT_0lKAx57z6hEjpTxTeq9ToxFOtlNv`,
-        },
-      };
-    }
-    return {};
-  }, [availableCapabilities, account.chainId]);
 
   const { data: allReports, isSuccess, isError } = useReadContract({
     address: CONTRACT_ADDRESS,
@@ -120,23 +96,22 @@ export default function Dashboard() {
     setSelectedReport(report)
     setIsVerifyOpen(true)
   }
-
   const handleVoteReport = async () => {
     if (selectedReport) {
-      writeContracts({
-        contracts: [
-          {
-            address: CONTRACT_ADDRESS,
-            abi: contractABI as any,
-            functionName: 'voteReport',
-            args: [selectedReport.id]
-          }
-        ],
-        capabilities,
-      })
+      try {
+        await writeContract({
+          address: CONTRACT_ADDRESS,
+          abi: contractABI,
+          functionName: 'voteReport',
+          args: [selectedReport.id]
+        })
+        setIsVerifyOpen(false)
+      } catch (error) {
+        console.error("Error voting on report:", error)
+      }
     }
-    setIsVerifyOpen(false)
   }
+
 
   const categories = [
     { name: 'Infrastructure', count: 99 },
@@ -275,18 +250,18 @@ export default function Dashboard() {
 
         {/* Verification Dialog */}
         <Dialog open={isVerifyOpen} onOpenChange={setIsVerifyOpen}>
-          <DialogContent className="sm:max-w-[525px]">
-            <DialogHeader>
-              <DialogTitle>Verify Report</DialogTitle>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => setIsVerifyOpen(false)}
-                className="absolute right-4 top-4"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </DialogHeader>
+        <DialogContent className="sm:max-w-[525px]">
+          <DialogHeader>
+            <DialogTitle>Verify Report</DialogTitle>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => setIsVerifyOpen(false)}
+              className="absolute right-4 top-4"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </DialogHeader>
             
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">

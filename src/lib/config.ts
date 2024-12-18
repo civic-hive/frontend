@@ -21,7 +21,6 @@ const hederaTestnet = {
   testnet: true,
 }
 
-// Get from https://cloud.reown.com
 export const projectId = '716fb73de093d46ed4865c0e79184e25'
 
 export const networks = [hederaTestnet]
