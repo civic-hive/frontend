@@ -27,22 +27,6 @@ const SubmitReport = () => {
   const account = useAccount();
   const { writeContract } = useWriteContract()
 
-  // const capabilities = useMemo(() => {
-  //   if (!availableCapabilities || !account.chainId) return {};
-  //   const capabilitiesForChain = availableCapabilities[account.chainId];
-  //   if (
-  //     capabilitiesForChain["paymasterService"] &&
-  //     capabilitiesForChain["paymasterService"].supported
-  //   ) {
-  //     return {
-  //       paymasterService: {
-  //         url: `https://api.developer.coinbase.com/rpc/v1/base/LyT_0lKAx57z6hEjpTxTeq9ToxFOtlNv`,
-  //       },
-  //     };
-  //   }
-  //   return {};
-  // }, [availableCapabilities, account.chainId]);
-
   const base64ToFile = (base64: string, filename: string) => {
     const arr = base64.split(',');
     const mimeMatch = arr[0].match(/:(.*?);/);
@@ -152,7 +136,7 @@ const SubmitReport = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/submit-content`,
+        `https://ethindia-24.onrender.com/api/submit-content`,
         {
           method: "POST",
           body: formData,
@@ -216,7 +200,7 @@ const SubmitReport = () => {
         args: [details, location, cID, category, sevScore],
       });
 
-      const response = await fetch(`http://localhost:8080/api/tweet`, {
+      const response = await fetch(`https://ethindia-24.onrender.com/api/tweet`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
